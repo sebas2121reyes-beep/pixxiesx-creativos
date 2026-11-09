@@ -7,7 +7,7 @@ var ETAPAS=[
   {id:"TOFU",t:"Atraer",d:"Generar conciencia, dar a conocer lo nuevo, recuperar clientes inactivos"},
   {id:"MOFU",t:"Posicionar",d:"Generar valor, explicar, comparar, dar confianza"},
   {id:"BOFU",t:"Cerrar",d:"Demostraciones, descuentos y atención personalizada"}];
-var FORMATOS=["UGC","Video producto","Estático","Carrusel","Testimonio","Demo","Unboxing","Reel en tienda","Motion / animación"];
+var FORMATOS=["UGC","Video producto","Educación de producto","Moda aspiracional","Estático","Carrusel","Testimonio","Demo","Unboxing","Reel en tienda","Motion / animación"];
 var ESTADOS=["Idea","Referentes","Guion","Producción","Edición","En pauta","Analizado"];
 var DONE=["En pauta","Analizado"];
 var FUENTES=["Meta Ad Library","Instagram","TikTok","Pinterest","YouTube","Competencia","Otro"];
