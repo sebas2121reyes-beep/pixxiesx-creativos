@@ -78,12 +78,14 @@ create table if not exists public.creativos (
   copy_titulo    text not null default '',
   copy_desc      text not null default '',
   brief          jsonb not null default '{}',
+  productos      jsonb not null default '[]',
   brief_token    text not null unique default replace(gen_random_uuid()::text,'-',''),
   brief_activo   boolean not null default false,
   creado_por     uuid default auth.uid(),
   creado         timestamptz not null default now(),
   actualizado    timestamptz not null default now()
 );
+alter table public.creativos add column if not exists productos jsonb not null default '[]';
 create index if not exists creativos_responsable on public.creativos(responsable);
 
 -- ---------- Pauta y resultados (solo admin) ----------
@@ -189,7 +191,7 @@ language sql stable security definer set search_path = public as $$
     'nombre', c.nombre, 'categoria', c.categoria, 'formato', c.formato, 'producto', c.producto,
     'angulo', c.angulo, 'hook', c.hook, 'mensaje', c.mensaje, 'cta', c.cta,
     'escenas', c.escenas, 'refs', c.refs, 'recursos', c.recursos, 'brief', c.brief,
-    'actualizado', c.actualizado
+    'productos', c.productos, 'actualizado', c.actualizado
   )
   from public.creativos c
   where c.brief_token = t and c.brief_activo

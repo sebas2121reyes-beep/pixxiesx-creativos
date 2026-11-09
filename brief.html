@@ -57,6 +57,14 @@ section > h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .ref .b{padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:14px}
 .ref .src{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .ref a{color:var(--ink);font-weight:700;font-size:13px}
+.gafas{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.gafa{border:2px solid var(--ink);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:var(--ink)}
+.gafa img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border-bottom:1px solid var(--line)}
+.gafa .g{padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.gafa b{font-size:14px;font-weight:800;line-height:1.25}
+.gafa .v{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.gafa .n{font-size:13px;background:var(--soft);border-radius:8px;padding:6px 8px}
+.gafa .l{font-size:12px;font-weight:700;text-decoration:underline}
 .dodont{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .list{border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
 .list h3{font-size:14px;font-weight:800}
@@ -132,6 +140,12 @@ function render(d){
   if(b.objetivo||d.angulo||d.mensaje){
     h+='<section><h2>La idea</h2>'+(d.angulo?'<p class="lead">'+esc(d.angulo)+'</p>':"")+(d.mensaje?'<p class="p">'+esc(d.mensaje)+'</p>':"")+
       (b.objetivo?'<p class="p"><b>Qué queremos lograr:</b> '+esc(b.objetivo)+'</p>':"")+'</section>';
+  }
+  var gafas=(d.productos||[]).filter(function(x){return x&&x.titulo});
+  if(gafas.length){
+    h+='<section><h2>Gafas para el video</h2><div class="gafas">'+gafas.map(function(x){var u=safeUrl(x.url),im=safeUrl(x.imagen);
+      return '<'+(u?'a href="'+esc(u)+'" target="_blank" rel="noopener"':'div')+' class="gafa">'+(im?'<img src="'+esc(im)+'" alt="'+esc(x.titulo)+'" loading="lazy">':"")+
+      '<div class="g"><b>'+esc(x.titulo)+'</b>'+(x.variante?'<span class="v">'+esc(x.variante)+'</span>':"")+(x.nota?'<span class="n">'+esc(x.nota)+'</span>':"")+(u?'<span class="l">Ver en la tienda ↗</span>':"")+'</div></'+(u?"a":"div")+'>'}).join("")+'</div></section>';
   }
   if(d.hook)h+='<div class="hook"><small>Hook · primeros 3 segundos</small>'+esc(d.hook)+'</div>';
   var esc_=(d.escenas||[]).filter(function(s){return s.visual||s.texto});

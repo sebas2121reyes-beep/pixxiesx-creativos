@@ -11,6 +11,7 @@ Web interna para planear, producir y medir los creativos de pauta de Pixxiesx, c
 | `config.js` | URL y publishable key de Supabase (públicas por diseño) |
 | `supabase/schema.sql` | Tablas, permisos por rol y almacenamiento de archivos |
 | `supabase/ejemplos.sql` | Datos de ejemplo (opcional) |
+| `supabase/02-gafas.sql` | Actualización: gafas de Shopify en cada creativo |
 | `vercel.json` | Rutas y cabeceras para Vercel |
 
 ## Roles
@@ -29,5 +30,7 @@ El primer usuario que se crea en Supabase queda como admin; los siguientes, como
 4. Supabase → Authentication → Users → Add user → crear tu usuario (queda admin).
 5. Vercel → Add New Project → importar este repo → Deploy (sin build, es un sitio estático).
 6. Vercel → Settings → Domains → agregar `creativos.pixxiesx.co` y crear el registro CNAME que indique en Shopify → Dominios.
+
+Gafas de Shopify: la web lee el catálogo con un token público de la Storefront API (app Headless de Shopify), configurado en `config.js`. Solo aparecen los productos publicados en el canal Headless.
 
 Para invitar a alguien: Supabase → Authentication → Users → Add user → Send invitation.
