@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brief de contenido · Pixxiesx</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="/icono.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Brief para creadores: hoja de marca en blanco y negro, legible en el celular e imprimible */
+:root{
+  --ink:#1A1A1A; --muted:#5C5C5C; --line:#E4E4E4; --soft:#F5F5F4; --bg:#FFFFFF;
+  --ok:#0C5132; --ok-soft:#E3F7EC; --no:#8E1F0B; --no-soft:#FDECEA;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+img,video{max-width:100%;display:block}
+h1,h2,h3{margin:0;line-height:1.15;text-wrap:balance}
+.bar{background:var(--ink);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bar img{height:34px;width:auto}
+.bar span{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.wrap{max-width:820px;margin:0 auto;padding:28px 20px 64px;display:flex;flex-direction:column;gap:28px}
+.hero{display:flex;flex-direction:column;gap:10px;border-bottom:3px solid var(--ink);padding-bottom:22px}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.hero h1{font-size:clamp(28px,6vw,42px);font-weight:800;letter-spacing:-.02em}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--line)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0}
+.facts div{background:#fff;padding:12px 14px;display:flex;flex-direction:column;gap:2px;box-shadow:0 0 0 .5px var(--line)}
+.facts dt{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:0;font-weight:600}
+.facts .due dd{font-size:17px}
+section{display:flex;flex-direction:column;gap:12px}
+section > h2{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+section > h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.lead{font-size:18px;font-weight:500;max-width:62ch;margin:0}
+.p{margin:0;max-width:65ch;white-space:pre-line}
+.hook{background:var(--ink);color:#fff;border-radius:14px;padding:20px 22px;font-size:clamp(20px,4.5vw,26px);font-weight:700;line-height:1.25;letter-spacing:-.01em}
+.hook small{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-bottom:8px}
+.scenes{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.scene{display:grid;grid-template-columns:44px 90px 1fr 1fr;gap:14px;padding:14px 16px;border-top:1px solid var(--line);align-items:start}
+.scene:first-child{border-top:0}
+.scene .n{font-size:22px;font-weight:800;line-height:1}
+.scene .t{font-size:12px;font-weight:700;color:var(--muted);padding-top:4px;font-variant-numeric:tabular-nums}
+.scene .lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.refs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.ref{border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.ref .m{aspect-ratio:4/5;background:var(--soft);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;font-weight:600}
+.ref .m img,.ref .m video{width:100%;height:100%;object-fit:cover}
+.ref .m.link{aspect-ratio:auto;padding:16px;justify-content:flex-start;font-size:14px;color:var(--ink);border-bottom:1px solid var(--line)}
+.ref .b{padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.ref .src{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ref a{color:var(--ink);font-weight:700;font-size:13px}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.list{border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.list h3{font-size:14px;font-weight:800}
+.list ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.list.ok{background:var(--ok-soft);color:var(--ok)}
+.list.no{background:var(--no-soft);color:var(--no)}
+.list.ok ul li::marker{content:"✓  "}
+.list.no ul li::marker{content:"✕  "}
+.plain ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:65ch}
+.cta{border:2px solid var(--ink);border-radius:12px;padding:14px 16px;font-weight:700;font-size:16px}
+.foot{border-top:1px solid var(--line);padding-top:18px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.state{min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted)}
+.state h1{color:var(--ink);font-size:22px;margin-bottom:8px}
+@media (max-width:640px){
+  .scene{grid-template-columns:34px 1fr;gap:6px 10px}
+  .scene .t{grid-column:2}
+  .scene > div:nth-child(3),.scene > div:nth-child(4){grid-column:2}
+  .dodont{grid-template-columns:1fr}
+}
+@media print{
+  .bar{background:#fff;color:var(--ink);border-bottom:2px solid var(--ink);padding:0 0 10px}
+  .bar img{filter:invert(1)}
+  .wrap{padding:16px 0}
+  .hook{background:#fff;color:var(--ink);border:2px solid var(--ink)}
+  section,.scene,.ref{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header class="bar"><img src="/logo-blanco.png" alt="PIXXIESX"><span>Brief de contenido</span></header>
+<main id="brief"><div class="state"><p>Cargando brief…</p></div></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<script src="/config.js"></script>
+<script>
+(function(){
+"use strict";
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function lines(t){return String(t||"").split(/\n+/).map(function(s){return s.replace(/^[-•*✓✕]\s*/,"").trim()}).filter(Boolean)}
+function fdate(f,long){if(!f)return "";var d=new Date(f+"T12:00:00");if(isNaN(d))return f;return d.toLocaleDateString("es-CO",long?{weekday:"long",day:"numeric",month:"long"}:{day:"numeric",month:"long",year:"numeric"})}
+function domain(u){try{return new URL(u).hostname.replace(/^www\./,"")}catch(e){return ""}}
+function safeUrl(u){return /^https?:\/\//i.test(u||"")?u:""}
+var el=document.getElementById("brief");
+function state(t,p){el.innerHTML='<div class="state"><div><h1>'+esc(t)+'</h1><p>'+esc(p)+'</p></div></div>'}
+
+var token=(new URLSearchParams(location.search).get("t"))||location.pathname.split("/").filter(Boolean).pop()||"";
+if(!/^[a-f0-9]{16,64}$/i.test(token)){state("Link incompleto","Pídele a Pixxiesx que te envíe el link del brief otra vez.");return}
+var C=window.PIXXIESX_CONFIG||{};
+if(!window.supabase||!C.url){state("No se pudo cargar","Intenta de nuevo en unos minutos.");return}
+var sb=window.supabase.createClient(C.url,C.anonKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+
+sb.rpc("ver_brief",{t:token}).then(function(res){
+  if(res.error){state("No se pudo cargar","Revisa tu conexión e intenta de nuevo.");return}
+  var d=res.data;
+  if(!d){state("Este brief no está disponible","Puede que ya no esté activo. Escríbele a Pixxiesx para confirmar.");return}
+  render(d);
+},function(){state("No se pudo cargar","Revisa tu conexión e intenta de nuevo.")});
+
+function render(d){
+  var b=d.brief||{};
+  document.title=(d.nombre||"Brief")+" · Brief Pixxiesx";
+  var facts=[
+    b.entrega?["Entrega",fdate(b.entrega,true),"due"]:null,
+    b.creador?["Creador",b.creador]:null,
+    ["Formato",b.formatoVideo||d.formato],
+    b.duracion?["Duración",b.duracion]:null,
+    b.cantidad?["Cantidad",b.cantidad]:null,
+    d.producto?["Producto",d.producto]:null
+  ].filter(Boolean);
+  var h='';
+  h+='<div class="wrap"><div class="hero"><span class="kicker">Brief de contenido · '+esc(d.categoria||"")+'</span><h1>'+esc(d.nombre||"Brief")+'</h1>'+
+    '<div class="chips"><span class="chip">'+esc(d.formato||"")+'</span>'+(d.categoria?'<span class="chip">'+esc(d.categoria)+'</span>':"")+'</div></div>';
+  h+='<dl class="facts">'+facts.map(function(f){return '<div class="'+(f[2]||"")+'"><dt>'+esc(f[0])+'</dt><dd>'+esc(f[1])+'</dd></div>'}).join("")+'</dl>';
+  if(b.objetivo||d.angulo||d.mensaje){
+    h+='<section><h2>La idea</h2>'+(d.angulo?'<p class="lead">'+esc(d.angulo)+'</p>':"")+(d.mensaje?'<p class="p">'+esc(d.mensaje)+'</p>':"")+
+      (b.objetivo?'<p class="p"><b>Qué queremos lograr:</b> '+esc(b.objetivo)+'</p>':"")+'</section>';
+  }
+  if(d.hook)h+='<div class="hook"><small>Hook · primeros 3 segundos</small>'+esc(d.hook)+'</div>';
+  var esc_=(d.escenas||[]).filter(function(s){return s.visual||s.texto});
+  if(esc_.length){
+    h+='<section><h2>Guion por escenas</h2><div class="scenes">'+esc_.map(function(s,i){
+      return '<div class="scene"><div class="n">'+(i+1)+'</div><div class="t">'+esc(s.dur||"")+'</div>'+
+      '<div><span class="lbl">Qué se ve</span>'+esc(s.visual||"–")+'</div><div><span class="lbl">Qué se dice o se lee</span>'+esc(s.texto||"–")+'</div></div>'}).join("")+'</div></section>';
+  }
+  var refs=(d.refs||[]).filter(function(r){return r.media||r.url||r.nota});
+  if(refs.length){
+    h+='<section><h2>Referentes</h2><div class="refs">'+refs.map(function(r){
+      var u=safeUrl(r.url),m=safeUrl(r.media);
+      var media=m?(r.mediaType==="video"?'<video src="'+esc(m)+'" controls playsinline preload="metadata"></video>':'<img src="'+esc(m)+'" alt="Referente" loading="lazy">'):esc(domain(u)||"Referente");
+      return '<article class="ref"><div class="m'+(m?"":" link")+'">'+media+'</div><div class="b"><span class="src">'+esc(r.plataforma||"")+'</span>'+(r.nota?'<span>'+esc(r.nota)+'</span>':"")+(u?'<a href="'+esc(u)+'" target="_blank" rel="noopener">Ver referente ↗</a>':"")+'</div></article>'}).join("")+'</div></section>';
+  }
+  var si=lines(b.si),no=lines(b.no);
+  if(si.length||no.length){
+    h+='<section><h2>Qué hacer y qué evitar</h2><div class="dodont">'+
+      (si.length?'<div class="list ok"><h3>Sí</h3><ul>'+si.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul></div>':"")+
+      (no.length?'<div class="list no"><h3>No</h3><ul>'+no.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul></div>':"")+'</div></section>';
+  }
+  function plain(title,arr){return arr.length?'<section class="plain"><h2>'+title+'</h2><ul>'+arr.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul></section>':""}
+  h+=plain("Especificaciones técnicas",lines(b.specs));
+  if(d.recursos)h+='<section><h2>Producción</h2><p class="p">'+esc(d.recursos)+'</p></section>';
+  if(d.cta)h+='<section><h2>Cierre del video</h2><div class="cta">'+esc(d.cta)+'</div></section>';
+  h+=plain("Qué nos debes entregar",lines(b.entregables));
+  if(b.notas)h+='<section><h2>Notas</h2><p class="p">'+esc(b.notas)+'</p></section>';
+  h+='<footer class="foot"><span>PIXXIESX · pixxiesx.co</span><span>Actualizado el '+esc(fdate(String(d.actualizado||"").slice(0,10)))+'</span></footer></div>';
+  el.innerHTML=h;
+}
+})();
+</script>
+</body>
+</html>
