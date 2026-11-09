@@ -65,6 +65,23 @@ section > h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .gafa .v{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .gafa .n{font-size:13px;background:var(--soft);border-radius:8px;padding:6px 8px}
 .gafa .l{font-size:12px;font-weight:700;text-decoration:underline}
+.hero .h1{font-size:clamp(24px,5vw,34px);font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.hero.sub{border-bottom-width:2px}
+.index{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.index a{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 12px 8px 8px;text-decoration:none;color:var(--ink)}
+.index a:hover{border-color:var(--ink)}
+.index img,.index .ix-n{width:52px;height:52px;border-radius:8px;object-fit:contain;background:var(--soft)}
+.index .ix-n{display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+.ix-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ix-t b{font-size:15px}
+.ix-t small{font-size:12px;color:var(--muted)}
+.ix-go{font-size:12px;font-weight:700;white-space:nowrap}
+.video{display:flex;flex-direction:column;gap:28px;padding-top:28px;border-top:6px solid var(--ink);scroll-margin-top:12px}
+.vnum{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.vnum span{background:var(--ink);color:#fff;padding:4px 10px;border-radius:999px}
+.vnum a{color:var(--muted);text-transform:none;letter-spacing:0;font-weight:600}
+@media (max-width:640px){.ix-go{display:none}.index a{grid-template-columns:52px 1fr}}
+@media print{.video{break-before:page}.vnum a{display:none}}
 .dodont{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .list{border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
 .list h3{font-size:14px;font-weight:800}
@@ -95,7 +112,7 @@ section > h2::after{content:"";flex:1;height:1px;background:var(--line)}
 </head>
 <body>
 <header class="bar"><img src="/logo-blanco.png" alt="PIXXIESX"><span>Brief de contenido</span></header>
-<main id="brief"><div class="state"><p>Cargando brief…</p></div></main>
+<a id="top"></a><main id="brief"><div class="state"><p>Cargando brief…</p></div></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
 <script>
@@ -109,32 +126,52 @@ function safeUrl(u){return /^https?:\/\//i.test(u||"")?u:""}
 var el=document.getElementById("brief");
 function state(t,p){el.innerHTML='<div class="state"><div><h1>'+esc(t)+'</h1><p>'+esc(p)+'</p></div></div>'}
 
-var token=(new URLSearchParams(location.search).get("t"))||location.pathname.split("/").filter(Boolean).pop()||"";
+var qs=new URLSearchParams(location.search),parts=location.pathname.split("/").filter(Boolean);
+var isPack=!!qs.get("p")||parts[0]==="p";
+var token=qs.get("p")||qs.get("t")||parts[parts.length-1]||"";
 if(!/^[a-f0-9]{16,64}$/i.test(token)){state("Link incompleto","Pídele a Pixxiesx que te envíe el link del brief otra vez.");return}
 var C=window.PIXXIESX_CONFIG||{};
 if(!window.supabase||!C.url){state("No se pudo cargar","Intenta de nuevo en unos minutos.");return}
 var sb=window.supabase.createClient(C.url,C.anonKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
 
-sb.rpc("ver_brief",{t:token}).then(function(res){
+sb.rpc(isPack?"ver_paquete":"ver_brief",{t:token}).then(function(res){
   if(res.error){state("No se pudo cargar","Revisa tu conexión e intenta de nuevo.");return}
   var d=res.data;
-  if(!d){state("Este brief no está disponible","Puede que ya no esté activo. Escríbele a Pixxiesx para confirmar.");return}
-  render(d);
+  if(!d){state(isPack?"Este link no está disponible":"Este brief no está disponible","Puede que ya no esté activo. Escríbele a Pixxiesx para confirmar.");return}
+  if(isPack)renderPack(d);else render(d);
 },function(){state("No se pudo cargar","Revisa tu conexión e intenta de nuevo.")});
 
 function render(d){
-  var b=d.brief||{};
   document.title=(d.nombre||"Brief")+" · Brief Pixxiesx";
+  el.innerHTML='<div class="wrap">'+briefBody(d,{})+'<footer class="foot"><span>PIXXIESX · pixxiesx.co</span><span>Actualizado el '+esc(fdate(String(d.actualizado||"").slice(0,10)))+'</span></footer></div>';
+}
+function renderPack(P){
+  var vids=P.creativos||[],n=vids.length;
+  document.title=(P.titulo||("Videos para "+(P.creador||"ti")))+" · Pixxiesx";
+  var h='<div class="wrap"><div class="hero"><span class="kicker">Paquete de contenido'+(P.creador?' · '+esc(P.creador):"")+'</span><h1>'+esc(P.titulo||("Videos para "+(P.creador||"ti")))+'</h1>'+
+    '<div class="chips"><span class="chip">'+n+(n===1?" video":" videos")+'</span></div></div>';
+  var facts=[P.creador?["Creador",P.creador]:null,P.entrega?["Entrega",fdate(P.entrega,true),"due"]:null,["Videos",String(n)]].filter(Boolean);
+  h+='<dl class="facts">'+facts.map(function(f){return '<div class="'+(f[2]||"")+'"><dt>'+esc(f[0])+'</dt><dd>'+esc(f[1])+'</dd></div>'}).join("")+'</dl>';
+  if(P.notas)h+='<section><h2>Antes de empezar</h2><p class="p">'+esc(P.notas)+'</p></section>';
+  if(!n)h+='<section><p class="p">Todavía no hay videos en este paquete.</p></section>';
+  else h+='<section><h2>Tus videos</h2><ol class="index">'+vids.map(function(v,i){var b=v.brief||{},g=(v.productos||[]).filter(function(x){return x&&x.imagen})[0];
+    return '<li><a href="#video-'+(i+1)+'">'+(g&&safeUrl(g.imagen)?'<img src="'+esc(g.imagen)+'" alt="">':'<span class="ix-n">'+(i+1)+'</span>')+'<span class="ix-t"><b>'+esc(v.nombre||"Video "+(i+1))+'</b><small>'+esc([v.formato,b.duracion,b.entrega?"Entrega "+fdate(b.entrega,true):""].filter(Boolean).join(" · "))+'</small></span><span class="ix-go">Ver brief ↓</span></a></li>'}).join("")+'</ol></section>';
+  h+=vids.map(function(v,i){return '<article class="video" id="video-'+(i+1)+'"><div class="vnum"><span>Video '+(i+1)+' de '+n+'</span><a href="#top">Volver a la lista ↑</a></div>'+briefBody(v,{pack:true})+'</article>'}).join("");
+  h+='<footer class="foot"><span>PIXXIESX · pixxiesx.co</span><span>Actualizado el '+esc(fdate(String(P.actualizado||"").slice(0,10)))+'</span></footer></div>';
+  el.innerHTML=h;
+}
+function briefBody(d,o){
+  var b=d.brief||{};
   var facts=[
     b.entrega?["Entrega",fdate(b.entrega,true),"due"]:null,
-    b.creador?["Creador",b.creador]:null,
+    b.creador&&!o.pack?["Creador",b.creador]:null,
     ["Formato",b.formatoVideo||d.formato],
     b.duracion?["Duración",b.duracion]:null,
     b.cantidad?["Cantidad",b.cantidad]:null,
     d.producto?["Producto",d.producto]:null
   ].filter(Boolean);
   var h='';
-  h+='<div class="wrap"><div class="hero"><span class="kicker">Brief de contenido · '+esc(d.categoria||"")+'</span><h1>'+esc(d.nombre||"Brief")+'</h1>'+
+  h+='<div class="hero'+(o.pack?" sub":"")+'"><span class="kicker">Brief de contenido · '+esc(d.categoria||"")+'</span>'+(o.pack?'<h2 class="h1">':'<h1>')+esc(d.nombre||"Brief")+(o.pack?'</h2>':'</h1>')+
     '<div class="chips"><span class="chip">'+esc(d.formato||"")+'</span>'+(d.categoria?'<span class="chip">'+esc(d.categoria)+'</span>':"")+'</div></div>';
   h+='<dl class="facts">'+facts.map(function(f){return '<div class="'+(f[2]||"")+'"><dt>'+esc(f[0])+'</dt><dd>'+esc(f[1])+'</dd></div>'}).join("")+'</dl>';
   if(b.objetivo||d.angulo||d.mensaje){
@@ -173,8 +210,7 @@ function render(d){
   if(d.cta)h+='<section><h2>Cierre del video</h2><div class="cta">'+esc(d.cta)+'</div></section>';
   h+=plain("Qué nos debes entregar",lines(b.entregables));
   if(b.notas)h+='<section><h2>Notas</h2><p class="p">'+esc(b.notas)+'</p></section>';
-  h+='<footer class="foot"><span>PIXXIESX · pixxiesx.co</span><span>Actualizado el '+esc(fdate(String(d.actualizado||"").slice(0,10)))+'</span></footer></div>';
-  el.innerHTML=h;
+  return h;
 }
 })();
 </script>

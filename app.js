@@ -68,7 +68,7 @@ var needPassword=/type=(invite|recovery)/.test(initialHash);
 
 /* ================= Estado ================= */
 var session=null,me=null,loading=false,loaded=false,lastLoad=0;
-var state={perfiles:[],creativos:[],banco:[],config:{metaCpa:35000,metaRoas:3,minCompras:3,briefBase:BRIEF_BASE_DEFAULT}};
+var state={perfiles:[],creativos:[],banco:[],paquetes:[],config:{metaCpa:35000,metaRoas:3,minCompras:3,briefBase:BRIEF_BASE_DEFAULT}};
 var ui={tab:"",q:"",fCat:"",fEtapa:"",fEstado:"",fResp:""};
 var draft=null,dirty=false,saving=false;
 function isAdmin(){return !!me&&me.rol==="admin"}
@@ -95,6 +95,8 @@ function bancoToDb(b){return {id:b.id,ejemplo:false,plataforma:b.plataforma,url:
 function blankCreativo(){return {id:uuid(),_nuevo:true,nombre:"",categoria:CATS[0],etapa:"TOFU",formato:"UGC",estado:"Idea",producto:"",angulo:"",insight:"",fecha:"",responsable:"",refs:[],hook:"",mensaje:"",cta:"",escenas:[],recursos:"",
   copyPrincipal:"",copyTitulo:"",copyDesc:"",productos:[],brief:clone(state.config.briefBase||BRIEF_BASE_DEFAULT),briefToken:"",briefActivo:false,
   campana:"",campanaId:"",conjunto:"",conjuntoId:"",anuncio:"",anuncioId:"",ventanas:blankVentanas(),ctr:"",clasif:"",elementos:[],aprendizaje:""}}
+function paqFromDb(r){return {id:r.id,creador:r.creador||"",titulo:r.titulo||"",contacto:r.contacto||"",entrega:r.entrega||"",notas:r.notas||"",creativos:r.creativos||[],token:r.token||"",activo:r.activo!==false,creado:r.creado,actualizado:r.actualizado}}
+function paqToDb(x){return {id:x.id,creador:x.creador,titulo:x.titulo,contacto:x.contacto,entrega:x.entrega||null,notas:x.notas,creativos:x.creativos,activo:!!x.activo}}
 function blankRef(){return {id:uid(),plataforma:"Meta Ad Library",url:"",nota:"",media:"",mediaType:""}}
 
 function q(res){if(res.error)throw res.error;return res.data}
@@ -106,9 +108,12 @@ function loadAll(silent){
     sb.from("creativos").select("*"),
     isAdmin()?sb.from("pauta").select("*"):Promise.resolve({data:[]}),
     sb.from("banco").select("*"),
-    sb.from("config").select("*")
+    sb.from("config").select("*"),
+    sb.from("paquetes").select("*").then(function(r){return r.error?{data:[],error:null,_sinTabla:true}:r})
   ]).then(function(r){
     var perfiles=q(r[0]),creativos=q(r[1]),pauta=q(r[2])||[],banco=q(r[3]),cfg=(q(r[4])||[])[0]||{};
+    state.paquetesListos=!r[5]._sinTabla;
+    state.paquetes=(r[5].data||[]).map(paqFromDb).sort(function(a,b){return String(b.creado).localeCompare(String(a.creado))});
     var pmap={};pauta.forEach(function(p){pmap[p.creativo_id]=p});
     state.perfiles=perfiles.sort(function(a,b){return (a.nombre||"").localeCompare(b.nombre||"")});
     state.creativos=creativos.map(function(c){return fromDb(c,pmap[c.id])});
@@ -311,10 +316,11 @@ var ICONS={
   referentes:'<path d="M4 5.75C4 4.784 4.784 4 5.75 4h8.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 16h-8.5A1.75 1.75 0 0 1 4 14.25zm1.75-.25a.25.25 0 0 0-.25.25v6.19l2.22-2.22a.75.75 0 0 1 1.06 0l1.47 1.47 3.22-3.22a.75.75 0 0 1 1.06 0l.97.97V5.75a.25.25 0 0 0-.25-.25zm8.75 6.06-1.5-1.5-3.72 3.72a.75.75 0 0 1-1.06 0L6.75 12.31 5.5 13.56v.69c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25zM8 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>',
   funnel:'<path d="M3.5 4.75A.75.75 0 0 1 4.25 4h11.5a.75.75 0 0 1 .58 1.225L12 10.52v4.73a.75.75 0 0 1-1.085.67l-2-1A.75.75 0 0 1 8.5 14.25v-3.73L3.67 5.225A.75.75 0 0 1 3.5 4.75m2.335.75L9.83 10.03a.75.75 0 0 1 .17.475v3.282l.5.25v-3.532a.75.75 0 0 1 .17-.475l3.995-4.53z"/>',
   ajustes:'<path d="M4 6.25h7.1a2.5 2.5 0 0 1 4.8 0h.1a.75.75 0 0 1 0 1.5h-.1a2.5 2.5 0 0 1-4.8 0H4a.75.75 0 0 1 0-1.5m9.5 1.75a1 1 0 1 0 0-2 1 1 0 0 0 0 2M4 12.25h.1a2.5 2.5 0 0 1 4.8 0H16a.75.75 0 0 1 0 1.5H8.9a2.5 2.5 0 0 1-4.8 0H4a.75.75 0 0 1 0-1.5m2.5 1.75a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>'};
-var TITLES={tareas:["Mis tareas","Los creativos que tienes asignados, ordenados por fecha de salida"],creativos:["Creativos","Concepto, referentes, guion, brief y pauta de cada anuncio"],ganadores:["Ganadores","Anuncios clasificados por CPA y ROAS en el mes, la semana pasada y la semana actual"],referentes:["Banco de referentes","Ideas y anuncios que te gustan, listos para convertir en creativos"],funnel:["Mezcla del funnel","Cuántos creativos tienes por categoría, etapa y formato"],ajustes:["Ajustes","Equipo, plantilla del brief y tu cuenta"]};
+ICONS.creadores='<path d="M7.5 4a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5M6.25 6.75a1.25 1.25 0 1 1 2.5 0 1.25 1.25 0 0 1-2.5 0M3 14.25A3.25 3.25 0 0 1 6.25 11h2.5A3.25 3.25 0 0 1 12 14.25v1a.75.75 0 0 1-1.5 0v-1c0-.966-.784-1.75-1.75-1.75h-2.5c-.966 0-1.75.784-1.75 1.75v1a.75.75 0 0 1-1.5 0zM13 6.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75m0 3a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5A.75.75 0 0 1 13 9.25"/>';
+var TITLES={creadores:["Creadores","Un link por creador con todos los videos que le tocan"],tareas:["Mis tareas","Los creativos que tienes asignados, ordenados por fecha de salida"],creativos:["Creativos","Concepto, referentes, guion, brief y pauta de cada anuncio"],ganadores:["Ganadores","Anuncios clasificados por CPA y ROAS en el mes, la semana pasada y la semana actual"],referentes:["Banco de referentes","Ideas y anuncios que te gustan, listos para convertir en creativos"],funnel:["Mezcla del funnel","Cuántos creativos tienes por categoría, etapa y formato"],ajustes:["Ajustes","Equipo, plantilla del brief y tu cuenta"]};
 function tabsFor(){
-  if(isAdmin())return [["creativos","Creativos",state.creativos.length],["ganadores","Ganadores",state.creativos.filter(function(c){return classify(c).id==="ganador"}).length],["referentes","Banco de referentes",state.banco.length],["funnel","Mezcla del funnel",null],["ajustes","Ajustes",null]];
-  return [["tareas","Mis tareas",myTasks().length],["creativos","Creativos",state.creativos.length],["referentes","Banco de referentes",state.banco.length],["funnel","Mezcla del funnel",null],["ajustes","Mi cuenta",null]];
+  if(isAdmin())return [["creativos","Creativos",state.creativos.length],["ganadores","Ganadores",state.creativos.filter(function(c){return classify(c).id==="ganador"}).length],["creadores","Creadores",state.paquetes.filter(function(x){return x.activo}).length],["referentes","Banco de referentes",state.banco.length],["funnel","Mezcla del funnel",null],["ajustes","Ajustes",null]];
+  return [["tareas","Mis tareas",myTasks().length],["creativos","Creativos",state.creativos.length],["creadores","Creadores",state.paquetes.filter(function(x){return x.activo}).length],["referentes","Banco de referentes",state.banco.length],["funnel","Mezcla del funnel",null],["ajustes","Mi cuenta",null]];
 }
 function initials(n){return String(n||"?").trim().split(/\s+/).map(function(w){return w[0]}).join("").slice(0,2).toUpperCase()}
 
@@ -332,11 +338,11 @@ function render(){
     '<div class="top-r">'+(isAdmin()?"":'<span class="role">Contenido</span>')+'<button class="avatar" data-tab="ajustes" title="'+esc(me.nombre||me.email)+'">'+esc(initials(me.nombre||me.email))+'</button><button class="lock-btn" data-logout>Salir</button></div></header>'+
     '<div class="layout"><nav class="side" role="tablist" aria-label="Secciones">'+tabs.map(function(t){return '<button class="tab" role="tab" data-tab="'+t[0]+'" aria-selected="'+(ui.tab===t[0])+'"><svg viewBox="0 0 20 20" aria-hidden="true">'+ICONS[t[0]]+'</svg>'+t[1]+(t[2]!=null?'<span class="count">'+t[2]+'</span>':"")+'</button>'}).join("")+'</nav>'+
     '<div class="wrap"><header class="top"><div class="brand"><h1>'+tt[0]+'</h1><small>'+tt[1]+'</small></div>'+
-    (canCreate?(ui.tab==="referentes"?'<button class="btn primary" data-bank-new>Agregar referente</button>':'<button class="btn primary" data-new>Crear creativo</button>'):"")+'</header>'+
+    (canCreate?(ui.tab==="referentes"?'<button class="btn primary" data-bank-new>Agregar referente</button>':ui.tab==="creadores"?(state.paquetesListos?'<button class="btn primary" data-paq-new>Nuevo link para creador</button>':""):'<button class="btn primary" data-new>Crear creativo</button>'):"")+'</header>'+
     '<main id="view">'+view()+'</main></div></div>';
 }
 function view(){
-  switch(ui.tab){case "tareas":return viewTareas();case "ganadores":return viewGanadores();case "referentes":return viewBanco();case "funnel":return viewFunnel();case "ajustes":return viewAjustes();default:return viewCreativos()}
+  switch(ui.tab){case "tareas":return viewTareas();case "ganadores":return viewGanadores();case "referentes":return viewBanco();case "creadores":return viewCreadores();case "funnel":return viewFunnel();case "ajustes":return viewAjustes();default:return viewCreativos()}
 }
 function focusFirst(){setTimeout(function(){var i=$("#root input");if(i)i.focus()},30)}
 
@@ -471,6 +477,70 @@ function viewAjustes(){
 function fieldB(id,label,v,o,attr,key){o=o||{};var ctrl=o.area?'<textarea id="'+id+'" '+attr+'="'+key+'" rows="'+(o.rows||3)+'" placeholder="'+esc(o.ph||"")+'">'+esc(v||"")+'</textarea>':'<input id="'+id+'" '+attr+'="'+key+'" type="'+(o.type||"text")+'" value="'+esc(v||"")+'" placeholder="'+esc(o.ph||"")+'">';
   return '<div class="fld'+(o.full?" full":"")+'"><label for="'+id+'">'+label+'</label>'+ctrl+'</div>'}
 
+/* ================= Creadores (paquetes de briefs) ================= */
+function paqUrl(x){return x.token?location.origin+"/p/"+x.token:""}
+function creativoById(id){return state.creativos.filter(function(c){return c.id===id})[0]}
+function waLink(x){
+  var nums=String(x.contacto||"").replace(/[^\d]/g,"");if(nums.length===10)nums="57"+nums;
+  var vids=(x.creativos||[]).map(creativoById).filter(Boolean);
+  var txt="Hola"+(x.creador?" "+x.creador.split(" ")[0]:"")+"! Te comparto los briefs de "+(vids.length===1?"tu video":"tus "+vids.length+" videos")+" para PIXXIESX"+(x.entrega?" (entrega: "+fdate(x.entrega)+")":"")+":\n"+paqUrl(x)+"\n\nCualquier duda me escribes.";
+  return "https://wa.me/"+(nums.length>=11?nums:"")+"?text="+encodeURIComponent(txt);
+}
+function viewCreadores(){
+  if(!state.paquetesListos)return '<div class="empty"><p>Falta un paso en Supabase: pega el archivo <b>03-paquetes.sql</b> en SQL Editor y dale Run. Después recarga esta página.</p></div>';
+  if(!state.paquetes.length)return '<div class="empty"><p>Crea un link para cada creador con todos los videos que le tocan. Lo abre sin usuario y ve el brief de cada video.</p><button class="btn primary" data-paq-new>Nuevo link para creador</button></div>';
+  return '<div class="grid">'+state.paquetes.map(function(x){
+    var vids=x.creativos.map(creativoById).filter(Boolean),u=paqUrl(x);
+    var thumbs=[].concat.apply([],vids.map(function(c){return (c.productos||[]).slice(0,1)})).slice(0,4);
+    return '<article class="card paq'+(x.activo?"":" off")+'"><div class="row"><span class="pill'+(x.activo?" on":"")+'">'+(x.activo?"Link activo":"Link apagado")+'</span>'+(x.entrega?'<span class="pill">Entrega '+esc(fdate(x.entrega))+'</span>':"")+'</div>'+
+      '<h3>'+esc(x.creador||"Sin nombre")+'</h3><div class="meta">'+esc(x.titulo||"")+(x.titulo?"<br>":"")+vids.length+(vids.length===1?" video":" videos")+(vids.length?": "+esc(vids.map(function(c){return c.nombre}).join(", ")):"")+'</div>'+
+      (thumbs.length?'<div class="pthumbs">'+thumbs.map(function(t){return t.imagen?'<img src="'+esc(t.imagen)+'" alt="'+esc(t.titulo)+'">':""}).join("")+'</div>':"")+
+      '<div class="acts">'+(x.activo&&u?'<a class="btn small primary" href="'+esc(waLink(x))+'" target="_blank" rel="noopener">Enviar por WhatsApp</a><button class="btn small" data-paq-copy="'+esc(x.id)+'">Copiar link</button><a class="btn small" href="'+esc(u)+'" target="_blank" rel="noopener">Ver</a>':"")+'<button class="btn small" data-paq-edit="'+esc(x.id)+'">Editar</button></div></article>'}).join("")+'</div>';
+}
+function openPaq(id,seed){
+  var x=id?state.paquetes.filter(function(p){return p.id===id})[0]:null;
+  draft={kind:"paq",data:x?clone(x):Object.assign({id:uuid(),_nuevo:true,creador:"",titulo:"",contacto:"",entrega:"",notas:"",creativos:[],token:"",activo:true},seed||{})};
+  ui.paqQ="";dirty=!!seed;renderSheet();
+}
+function sheetPaq(d){
+  var isNew=!!d._nuevo,u=paqUrl(d);
+  var chosen=d.creativos.map(creativoById).filter(Boolean);
+  var qq=String(ui.paqQ||"").toLowerCase();
+  var sugeridos=d.creador?state.creativos.filter(function(c){return d.creativos.indexOf(c.id)<0&&String((c.brief||{}).creador||"").trim().toLowerCase()===d.creador.trim().toLowerCase()}):[];
+  var disponibles=state.creativos.filter(function(c){return d.creativos.indexOf(c.id)<0&&(!qq||[c.nombre,c.categoria,c.formato,(c.brief||{}).creador,(c.productos||[]).map(function(x){return x.titulo}).join(" ")].join(" ").toLowerCase().indexOf(qq)>=0)})
+    .sort(function(a,b){return (DONE.indexOf(a.estado)>=0)-(DONE.indexOf(b.estado)>=0)||ESTADOS.indexOf(a.estado)-ESTADOS.indexOf(b.estado)});
+  function mini(c){var g=(c.productos||[])[0];return (g&&g.imagen?'<img src="'+esc(g.imagen)+'" alt="">':'<span class="mi-ph"></span>')+'<span class="mi-t"><b>'+esc(c.nombre||"Sin nombre")+'</b><small>'+esc([c.estado,c.formato,(c.brief||{}).creador].filter(Boolean).join(" · "))+'</small></span>'}
+  return '<div class="sheet-bg" data-close></div><section class="panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">'+
+  '<header class="panel-head"><div><p class="eyebrow">'+(isNew?"Nuevo link para creador":"Link para creador")+'</p><h2 id="sheet-title">'+esc(d.creador||"Sin nombre")+'</h2></div><div class="head-actions"><button class="btn ghost" data-close>Cerrar</button><button class="btn primary" data-save>Guardar</button></div></header>'+
+  '<div class="panel-body" id="pbody"><fieldset>'+
+  '<section class="block"><h3><span class="num">1</span>Creador</h3><div class="fields">'+
+    field("creador","Nombre del creador",d,{ph:"Ej: Laura Gómez"})+field("contacto","WhatsApp",d,{im:"tel",ph:"Ej: 300 123 4567"})+
+    field("titulo","Nombre del paquete (opcional)",d,{ph:"Ej: Videos Black Friday"})+field("entrega","Fecha de entrega",d,{type:"date"})+
+    field("notas","Notas para el creador",d,{full:true,area:true,rows:3,ph:"Lo que aplica a todos los videos: horario, dirección para recoger las gafas, pago, etc."})+'</div></section>'+
+  '<section class="block"><h3><span class="num">2</span>Videos de este link</h3><p class="hint">El creador los ve en este orden. Cada uno muestra su brief completo: gafas, hook, guion, referentes y qué hacer y qué evitar.</p>'+
+    (chosen.length?'<ol class="chosen">'+chosen.map(function(c,i){return '<li><span class="ord">'+(i+1)+'</span>'+mini(c)+'<span class="ord-b"><button class="icon-btn" type="button" data-paq-up="'+i+'" aria-label="Subir"'+(i===0?" disabled":"")+'>↑</button><button class="icon-btn" type="button" data-paq-down="'+i+'" aria-label="Bajar"'+(i===chosen.length-1?" disabled":"")+'>↓</button><button class="icon-btn" type="button" data-paq-rm="'+esc(c.id)+'" aria-label="Quitar">×</button></span></li>'}).join("")+'</ol>':'<p class="hint">Todavía no has agregado videos.</p>')+
+    (sugeridos.length?'<div class="howto">Hay '+sugeridos.length+' creativo'+(sugeridos.length===1?"":"s")+' con "'+esc(d.creador)+'" en el brief. <button class="btn small" type="button" data-paq-sug>Agregarlos</button></div>':"")+
+    '<div class="fld"><label for="paq-q">Agregar creativos</label><input id="paq-q" type="search" data-paq-q value="'+esc(ui.paqQ||"")+'" placeholder="Buscar por nombre, formato, gafas…" autocomplete="off"></div>'+
+    '<div class="pick-list" id="paq-list">'+(disponibles.length?disponibles.slice(0,40).map(function(c){return '<button type="button" class="pick" data-paq-add="'+esc(c.id)+'">'+mini(c)+'<span class="pk-add">Agregar</span></button>'}).join(""):'<p class="hint">No hay más creativos'+(qq?" con esa búsqueda":"")+'.</p>')+'</div></section>'+
+  '<section class="block"><h3><span class="num">3</span>Link</h3><div class="brief-link"><label class="switch"><input type="checkbox" data-paq-on'+(d.activo?" checked":"")+'><span>Link activo</span></label>'+
+    (isNew||!u?'<p class="hint">Guarda para obtener el link.</p>':'<div class="linkrow"><input id="paq-url" readonly value="'+esc(u)+'" aria-label="Link del creador"><button class="btn small" type="button" data-paq-copy="'+esc(d.id)+'">Copiar</button><a class="btn small" href="'+esc(u)+'" target="_blank" rel="noopener">Ver</a></div>'+
+    '<p class="hint">'+(d.activo?"Cualquiera con este link ve los briefs de estos videos, sin usuario y sin números. Si cambias los videos, el mismo link se actualiza.":"Apagado: el link muestra que ya no está disponible.")+'</p>')+'</div></section>'+
+  '</fieldset></div><footer class="panel-foot">'+(isNew||!isAdmin()?"":'<button class="btn danger" data-del>Eliminar</button>')+'<div class="r"><button class="btn primary" data-save>Guardar</button></div></footer></section>';
+}
+function savePaq(){
+  var d=draft.data;
+  if(!String(d.creador||"").trim()){toast("Escribe el nombre del creador");var n=$("#f-creador");if(n)n.focus();return}
+  setSaving(true);
+  sb.from("paquetes").upsert(paqToDb(d)).select().single().then(function(res){
+    var x=paqFromDb(q(res));var i=state.paquetes.findIndex(function(p){return p.id===x.id});
+    if(i>=0)state.paquetes[i]=x;else state.paquetes.unshift(x);
+    var wasNew=d._nuevo;setSaving(false);
+    if(wasNew){draft={kind:"paq",data:clone(x)};dirty=false;renderSheet();render();toast("Link creado. Ya lo puedes enviar.")}
+    else{draft=null;dirty=false;renderSheet();render();toast("Guardado")}
+  }).catch(function(e){setSaving(false);toast("No se pudo guardar: "+errMsg(e))});
+}
+function copyText(txt){(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(function(){toast("Link copiado")},function(){var i=document.createElement("input");i.value=txt;document.body.appendChild(i);i.select();try{document.execCommand("copy");toast("Link copiado")}catch(e){toast(txt)}i.remove()})}
+
 /* ================= Ficha ================= */
 function field(k,label,d,o){o=o||{};var id="f-"+k,v=d[k]==null?"":d[k],ctrl;
   if(o.area)ctrl='<textarea id="'+id+'" data-f="'+k+'" rows="'+(o.rows||3)+'" placeholder="'+esc(o.ph||"")+'">'+esc(v)+'</textarea>';
@@ -548,7 +618,7 @@ function renderSheet(){
   var el=$("#sheet");
   if(!draft){el.innerHTML="";document.body.style.overflow="";return}
   var pb=$("#pbody"),st=pb?pb.scrollTop:0;
-  el.innerHTML=draft.kind==="ref"?sheetRef(draft.data):sheetCreativo(draft.data);
+  el.innerHTML=draft.kind==="ref"?sheetRef(draft.data):draft.kind==="paq"?sheetPaq(draft.data):sheetCreativo(draft.data);
   document.body.style.overflow="hidden";
   var nb=$("#pbody");if(nb)nb.scrollTop=st;
 }
@@ -564,6 +634,7 @@ function closeSheet(force){
 function setSaving(on){saving=on;document.querySelectorAll("[data-save]").forEach(function(b){b.disabled=on;b.textContent=on?"Guardando…":"Guardar"})}
 function save(){
   if(!draft||saving)return;
+  if(draft.kind==="paq"){savePaq();return}
   var d=draft.data;
   if(draft.kind==="creativo"){
     if(!String(d.nombre||"").trim()){toast("Ponle un nombre al creativo");var nn=$("#f-nombre");if(nn)nn.focus();return}
@@ -591,12 +662,12 @@ function save(){
   }
 }
 function del(){
-  if(!draft||!isAdmin())return;var d=draft.data,isC=draft.kind==="creativo";
-  ask(isC?"¿Eliminar el creativo \""+(d.nombre||"Sin nombre")+"\"? No se puede deshacer.":"¿Eliminar este referente del banco?","Eliminar").then(function(ok){
+  if(!draft||!isAdmin())return;var d=draft.data,isC=draft.kind==="creativo",isP=draft.kind==="paq";
+  ask(isP?"¿Eliminar el link de "+(d.creador||"este creador")+"? Dejará de funcionar. Los creativos no se borran.":isC?"¿Eliminar el creativo \""+(d.nombre||"Sin nombre")+"\"? No se puede deshacer.":"¿Eliminar este referente del banco?","Eliminar").then(function(ok){
     if(!ok)return;
-    sb.from(isC?"creativos":"banco").delete().eq("id",d.id).then(function(res){
+    sb.from(isP?"paquetes":isC?"creativos":"banco").delete().eq("id",d.id).then(function(res){
       if(res.error){toast("No se pudo eliminar: "+errMsg(res.error));return}
-      if(isC)state.creativos=state.creativos.filter(function(c){return c.id!==d.id});else state.banco=state.banco.filter(function(b){return b.id!==d.id});
+      if(isP)state.paquetes=state.paquetes.filter(function(x){return x.id!==d.id});else if(isC)state.creativos=state.creativos.filter(function(c){return c.id!==d.id});else state.banco=state.banco.filter(function(b){return b.id!==d.id});
       draft=null;dirty=false;renderSheet();clearHash();render();toast("Eliminado");
     });
   });
@@ -650,6 +721,14 @@ function backup(tipo,btn){
 document.addEventListener("click",function(ev){
   var t=ev.target.closest("button,[data-close],a[data-x]");if(!t)return;var ds=t.dataset;
   if(ds.backup){backup(ds.backup,t);return}
+  if(ds.paqNew!=null){openPaq(null);return}
+  if(ds.paqEdit){openPaq(ds.paqEdit);return}
+  if(ds.paqCopy){var px=draft&&draft.kind==="paq"&&draft.data.id===ds.paqCopy?draft.data:state.paquetes.filter(function(x){return x.id===ds.paqCopy})[0];if(px)copyText(paqUrl(px));return}
+  if(ds.paqAdd&&draft){draft.data.creativos.push(ds.paqAdd);dirty=true;renderSheet();return}
+  if(ds.paqRm&&draft){draft.data.creativos=draft.data.creativos.filter(function(x){return x!==ds.paqRm});dirty=true;renderSheet();return}
+  if(ds.paqUp!=null&&draft){var a1=draft.data.creativos.filter(function(id){return creativoById(id)}),i1=+ds.paqUp;if(i1>0){var tmp=a1[i1-1];a1[i1-1]=a1[i1];a1[i1]=tmp;draft.data.creativos=a1;dirty=true;renderSheet()}return}
+  if(ds.paqDown!=null&&draft){var a2=draft.data.creativos.filter(function(id){return creativoById(id)}),i2=+ds.paqDown;if(i2<a2.length-1){var tmp2=a2[i2+1];a2[i2+1]=a2[i2];a2[i2]=tmp2;draft.data.creativos=a2;dirty=true;renderSheet()}return}
+  if(ds.paqSug!=null&&draft){var nm=draft.data.creador.trim().toLowerCase();state.creativos.forEach(function(c){if(draft.data.creativos.indexOf(c.id)<0&&String((c.brief||{}).creador||"").trim().toLowerCase()===nm)draft.data.creativos.push(c.id)});dirty=true;renderSheet();return}
   if(ds.shopAdd){addProduct(ds.shopAdd);return}
   if(ds.shopMore!=null){runProductSearch(true);return}
   if(ds.shopRetry!=null){shopCache={};runProductSearch(false);return}
@@ -687,9 +766,11 @@ document.addEventListener("input",function(ev){
   if(!draft)return;
   if(ds.f){if(t.type==="radio"&&!t.checked)return;draft.data[ds.f]=t.value;dirty=true;
     if(ds.f==="nombre"&&draft.kind==="creativo")$("#sheet-title").textContent=t.value||"Sin nombre";
+    if(ds.f==="creador"&&draft.kind==="paq")$("#sheet-title").textContent=t.value||"Sin nombre";
     if(ds.f==="clasif")$("#tierbox").innerHTML=tierBox(draft.data);
     if(ds.f==="etapa"){var p=$(".panel");if(p)p.className="panel st-"+t.value}
     return}
+  if(ds.paqQ!=null){ui.paqQ=t.value;clearTimeout(ui._pq);ui._pq=setTimeout(function(){var pos=t.selectionStart;renderSheet();var n=$("#paq-q");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}},250);return}
   if(ds.shopQ!=null){shopUi.q=t.value;clearTimeout(shopTimer);shopTimer=setTimeout(function(){runProductSearch(false)},350);return}
   if(ds.pk!=null){draft.data.productos[+ds.pk].nota=t.value;dirty=true;return}
   if(ds.brief){draft.data.brief=draft.data.brief||{};draft.data.brief[ds.brief]=t.value;dirty=true;return}
@@ -701,6 +782,8 @@ document.addEventListener("change",function(ev){
   var t=ev.target,ds=t.dataset;
   if(ds.upload!=null){handleUpload(t);return}
   if(ds.shopVar){shopUi.pick[ds.shopVar]=t.value;paintResults();return}
+  if(ds.f==="creador"&&draft&&draft.kind==="paq"){renderSheet();return}
+  if(ds.paqOn!=null&&draft){draft.data.activo=t.checked;dirty=true;return}
   if(ds.briefOn!=null&&draft){draft.data.briefActivo=t.checked;dirty=true;return}
   if(ds.el!=null&&draft){var el=draft.data.elementos,v=ds.el,ix=el.indexOf(v);if(t.checked&&ix<0)el.push(v);if(!t.checked&&ix>=0)el.splice(ix,1);dirty=true;return}
   if(ds.fromBank!=null&&draft&&t.value){var b=state.banco.filter(function(x){return x.id===t.value})[0];if(b){draft.data.refs.push({id:uid(),plataforma:b.plataforma,url:b.url,nota:b.nota,media:b.media||"",mediaType:b.mediaType||""});dirty=true;renderSheet();toast("Referente agregado")}return}

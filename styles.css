@@ -332,3 +332,25 @@ button.avatar{border:0;cursor:pointer}
 .pthumbs{display:flex;gap:6px;align-items:center}
 .pthumbs img{width:40px;height:40px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px}
 .pthumbs span{font-size:12px;color:var(--muted);font-weight:550}
+
+/* ===== Creadores (paquetes) ===== */
+.card.paq{cursor:default}
+.card.paq:hover{background:var(--surface)}
+.card.off{opacity:.7}
+.card .acts{display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--line-2);padding-top:10px}
+.card .acts a.btn{text-decoration:none}
+.chosen{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.chosen li{display:grid;grid-template-columns:24px 44px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:var(--surface-2)}
+.ord{font-weight:700;color:var(--muted);text-align:center}
+.ord-b{display:flex;gap:2px}
+.icon-btn[disabled]{opacity:.3;cursor:default}
+.chosen img,.pick img,.mi-ph{width:44px;height:44px;border-radius:8px;object-fit:contain;background:#fff;border:1px solid var(--line-2);display:block}
+.mi-ph{background:var(--surface-2)}
+.mi-t{display:flex;flex-direction:column;min-width:0}
+.mi-t b{font-size:13px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mi-t small{font-size:12px;color:var(--muted)}
+.pick-list{display:flex;flex-direction:column;gap:4px;max-height:360px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:4px}
+.pick{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:6px;cursor:pointer}
+.pick:hover{background:var(--hover)}
+.pk-add{font-size:12px;font-weight:650;color:var(--link)}
+@media (max-width:640px){.chosen li{grid-template-columns:20px 40px 1fr;}.chosen .ord-b{grid-column:1/-1;justify-content:flex-end}}

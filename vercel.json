@@ -1,7 +1,8 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/brief/:token", "destination": "/brief" }
+    { "source": "/brief/:token", "destination": "/brief" },
+    { "source": "/p/:token", "destination": "/brief" }
   ],
   "headers": [
     {
