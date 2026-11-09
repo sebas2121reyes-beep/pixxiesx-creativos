@@ -354,3 +354,15 @@ button.avatar{border:0;cursor:pointer}
 .pick:hover{background:var(--hover)}
 .pk-add{font-size:12px;font-weight:650;color:var(--link)}
 @media (max-width:640px){.chosen li{grid-template-columns:20px 40px 1fr;}.chosen .ord-b{grid-column:1/-1;justify-content:flex-end}}
+
+/* ===== Espacio usado ===== */
+#uso-body{display:flex;flex-direction:column;gap:14px}
+.uso{display:flex;flex-direction:column;gap:6px}
+.uso-h{display:flex;justify-content:space-between;gap:10px;font-size:13px;flex-wrap:wrap}
+.uso-h b{font-weight:650}
+.uso-h span{color:var(--muted);font-variant-numeric:tabular-nums}
+.uso-bar{height:10px;border-radius:5px;background:var(--line-2);overflow:hidden}
+.uso-bar i{display:block;height:100%;border-radius:5px}
+.uso-bar.ok i{background:#29845A}
+.uso-bar.warn i{background:#E8C800}
+.uso-bar.bad i{background:#E51C00}

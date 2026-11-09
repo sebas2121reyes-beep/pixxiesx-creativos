@@ -12,6 +12,7 @@ Web interna para planear, producir y medir los creativos de pauta de Pixxiesx, c
 | `supabase/schema.sql` | Tablas, permisos por rol y almacenamiento de archivos |
 | `supabase/ejemplos.sql` | Datos de ejemplo (opcional) |
 | `supabase/02-gafas.sql` | Actualización: gafas de Shopify en cada creativo |
+| `supabase/04-espacio.sql` | Actualización: medidor de espacio usado en Ajustes |
 | `supabase/03-paquetes.sql` | Actualización: un link por creador con varios videos (`/p/<token>`) |
 | `vercel.json` | Rutas y cabeceras para Vercel |
 

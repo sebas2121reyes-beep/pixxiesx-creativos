@@ -57,6 +57,8 @@ function errMsg(e){var m=(e&&(e.message||e.error_description||e.msg))||String(e|
   if(/Password should be at least/i.test(m))return "La contraseña debe tener al menos 6 caracteres.";
   if(/rate limit|too many/i.test(m))return "Demasiados intentos. Espera un minuto y vuelve a intentar.";
   if(/Failed to fetch|NetworkError/i.test(m))return "No hay conexión. Revisa tu internet.";
+  if(/maximum allowed size|Payload too large|too large|413/i.test(m))return "El archivo pasa el límite de 50 MB por archivo. Recórtalo o comprímelo y vuelve a intentar.";
+  if(/quota|storage limit|exceed.*(storage|space)/i.test(m))return "Se llenó el espacio de archivos (1 GB). Borra archivos viejos o pasa al plan Pro de Supabase.";
   return m;}
 
 /* ================= Supabase ================= */
@@ -340,6 +342,7 @@ function render(){
     '<div class="wrap"><header class="top"><div class="brand"><h1>'+tt[0]+'</h1><small>'+tt[1]+'</small></div>'+
     (canCreate?(ui.tab==="referentes"?'<button class="btn primary" data-bank-new>Agregar referente</button>':ui.tab==="creadores"?(state.paquetesListos?'<button class="btn primary" data-paq-new>Nuevo link para creador</button>':""):'<button class="btn primary" data-new>Crear creativo</button>'):"")+'</header>'+
     '<main id="view">'+view()+'</main></div></div>';
+  if(ui.tab==="ajustes"&&isAdmin())loadUso();
 }
 function view(){
   switch(ui.tab){case "tareas":return viewTareas();case "ganadores":return viewGanadores();case "referentes":return viewBanco();case "creadores":return viewCreadores();case "funnel":return viewFunnel();case "ajustes":return viewAjustes();default:return viewCreativos()}
@@ -472,7 +475,8 @@ function viewAjustes(){
     '<span class="status" style="--st:'+(dias==null||dias>7?"#E51C00":"#29845A")+'">'+(last?"Último respaldo en este dispositivo: "+esc(new Date(last).toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"}))+(dias>7?" · hace "+dias+" días":""):"Todavía no has descargado un respaldo en este dispositivo")+'</span>'+
     '<div class="r" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-backup="json">Descargar respaldo completo</button><button class="btn" data-backup="csv">Descargar creativos en Excel</button></div>'+
     '<p class="hint">El respaldo completo (.json) sirve para restaurar todo si algo se borra. El archivo de Excel (.csv) es para revisar o filtrar los creativos con sus números.</p></section>';
-  return '<div class="fun">'+resp+team+base+cuenta+'</div>';
+  var uso='<section class="panel-card" id="uso-card"><h2>Espacio usado</h2><div id="uso-body"><p class="hint">Calculando…</p></div></section>';
+  return '<div class="fun">'+uso+resp+team+base+cuenta+'</div>';
 }
 function fieldB(id,label,v,o,attr,key){o=o||{};var ctrl=o.area?'<textarea id="'+id+'" '+attr+'="'+key+'" rows="'+(o.rows||3)+'" placeholder="'+esc(o.ph||"")+'">'+esc(v||"")+'</textarea>':'<input id="'+id+'" '+attr+'="'+key+'" type="'+(o.type||"text")+'" value="'+esc(v||"")+'" placeholder="'+esc(o.ph||"")+'">';
   return '<div class="fld'+(o.full?" full":"")+'"><label for="'+id+'">'+label+'</label>'+ctrl+'</div>'}
@@ -684,9 +688,29 @@ function handleUpload(input){
     var m={media:url,mediaType:String(file.type||"").indexOf("video")===0?"video":"image"};
     if(!draft)return;
     if(target==="bank")Object.assign(draft.data,m);else if(draft.data.refs[+target])Object.assign(draft.data.refs[+target],m);
-    dirty=true;renderSheet();toast("Archivo listo. Recuerda guardar.");
+    dirty=true;renderSheet();toast("Archivo listo. Recuerda guardar.");setTimeout(avisoEspacio,3500);
   }).catch(function(e){toast("No se pudo subir: "+errMsg(e))});
 }
+
+/* ================= Espacio usado ================= */
+var LIMITE_ARCHIVOS=1024*1024*1024,LIMITE_BASE=500*1024*1024;
+function mb(b){var m=b/1048576;return m>=1000?String(Math.round(m/1024*100)/100).replace(".",",")+" GB":(m<10?m.toFixed(1).replace(".",","):Math.round(m))+" MB"}
+function barra(label,usado,limite,extra){
+  var pct=Math.min(100,Math.round(usado*100/limite)),cls=pct>=90?"bad":pct>=70?"warn":"ok";
+  return '<div class="uso"><div class="uso-h"><b>'+label+'</b><span>'+mb(usado)+' de '+mb(limite)+' · '+pct+' %</span></div><div class="uso-bar '+cls+'" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100" aria-label="'+esc(label)+'"><i style="width:'+Math.max(pct,1)+'%"></i></div>'+(extra?'<p class="hint">'+extra+'</p>':"")+'</div>';
+}
+function loadUso(){
+  var el=$("#uso-body");if(!el||!sb)return;
+  sb.rpc("uso_espacio").then(function(res){
+    el=$("#uso-body");if(!el)return;
+    if(res.error){el.innerHTML='<p class="hint">Falta un paso en Supabase: pega el archivo <b>04-espacio.sql</b> en SQL Editor y dale Run.</p>';return}
+    var u=res.data||{};var pa=Math.round((u.archivos||0)*100/LIMITE_ARCHIVOS);
+    el.innerHTML=barra("Imágenes y videos",u.archivos||0,LIMITE_ARCHIVOS,(u.cantidad||0)+" archivos, "+(u.videos||0)+" de ellos videos. Máximo 50 MB por archivo.")+
+      barra("Base de datos",u.base||0,LIMITE_BASE,"Textos, creativos, pauta y briefs. Ocupa muy poco.")+
+      (pa>=90?'<div class="shop-msg bad">Casi no queda espacio para archivos. Borra referentes viejos o pasa al plan Pro de Supabase (100 GB).</div>':pa>=70?'<div class="howto">Vas por más del 70 %. Para referentes en video, considera guardar los más pesados en Drive y pegar el link.</div>':"");
+  },function(){var e2=$("#uso-body");if(e2)e2.innerHTML='<p class="hint">No se pudo calcular el espacio. Revisa tu conexión.</p>'});
+}
+function avisoEspacio(){if(!isAdmin()||!sb)return;sb.rpc("uso_espacio").then(function(res){var u=res.data;if(!u)return;var pct=Math.round((u.archivos||0)*100/LIMITE_ARCHIVOS);if(pct>=90)toast("Ojo: llevas "+pct+" % del espacio de archivos ("+mb(u.archivos)+" de 1 GB).")})}
 
 /* ================= Respaldo ================= */
 function descargar(nombre,contenido,tipo){
