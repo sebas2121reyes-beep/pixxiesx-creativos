@@ -354,7 +354,13 @@ function viewAjustes(){
   var base='<section class="panel-card"><h2>Plantilla base del brief</h2><p>Con esto arranca el brief de cada creativo nuevo. Después lo ajustas en cada uno.</p><form id="base-form" class="fields">'+
     BRIEF_FIELDS.filter(function(f){return ["creador","entrega","objetivo"].indexOf(f[0])<0}).map(function(f){return fieldB("bb-"+f[0],f[1],bb[f[0]],f[2],"data-base",f[0])}).join("")+
     '<div class="r fld full"><button class="btn" type="submit">Guardar plantilla</button></div></form></section>';
-  return '<div class="fun">'+team+base+cuenta+'</div>';
+  var last="";try{last=localStorage.getItem("pixxiesx-ultimo-respaldo")||""}catch(e){}
+  var dias=last?Math.floor((Date.now()-new Date(last).getTime())/86400000):null;
+  var resp='<section class="panel-card"><h2>Respaldo</h2><p>Descarga una copia de todo: creativos, pauta, referentes, equipo y ajustes. Guárdala en tu Drive. Hazlo al menos una vez por semana, porque el plan gratis de Supabase no guarda copias automáticas.</p>'+
+    '<span class="status" style="--st:'+(dias==null||dias>7?"#E51C00":"#29845A")+'">'+(last?"Último respaldo en este dispositivo: "+esc(new Date(last).toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"}))+(dias>7?" · hace "+dias+" días":""):"Todavía no has descargado un respaldo en este dispositivo")+'</span>'+
+    '<div class="r" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-backup="json">Descargar respaldo completo</button><button class="btn" data-backup="csv">Descargar creativos en Excel</button></div>'+
+    '<p class="hint">El respaldo completo (.json) sirve para restaurar todo si algo se borra. El archivo de Excel (.csv) es para revisar o filtrar los creativos con sus números.</p></section>';
+  return '<div class="fun">'+resp+team+base+cuenta+'</div>';
 }
 function fieldB(id,label,v,o,attr,key){o=o||{};var ctrl=o.area?'<textarea id="'+id+'" '+attr+'="'+key+'" rows="'+(o.rows||3)+'" placeholder="'+esc(o.ph||"")+'">'+esc(v||"")+'</textarea>':'<input id="'+id+'" '+attr+'="'+key+'" type="'+(o.type||"text")+'" value="'+esc(v||"")+'" placeholder="'+esc(o.ph||"")+'">';
   return '<div class="fld'+(o.full?" full":"")+'"><label for="'+id+'">'+label+'</label>'+ctrl+'</div>'}
@@ -504,9 +510,39 @@ function handleUpload(input){
   }).catch(function(e){toast("No se pudo subir: "+errMsg(e))});
 }
 
+/* ================= Respaldo ================= */
+function descargar(nombre,contenido,tipo){
+  var blob=new Blob([contenido],{type:tipo});var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");a.href=url;a.download=nombre;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove()},1000);
+}
+function hoy(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function csvCell(v){v=v==null?"":String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function backup(tipo,btn){
+  if(!isAdmin())return;
+  var txt=btn.textContent;btn.disabled=true;btn.textContent="Preparando…";
+  var tablas=["perfiles","creativos","pauta","banco","config"];
+  Promise.all(tablas.map(function(t){return sb.from(t).select("*").then(q)})).then(function(r){
+    var data={};tablas.forEach(function(t,i){data[t]=r[i]});
+    if(tipo==="json"){
+      descargar("respaldo-creativos-pixxiesx-"+hoy()+".json",JSON.stringify({app:"pixxiesx-creativos",version:1,fecha:new Date().toISOString(),tablas:data},null,2),"application/json");
+      try{localStorage.setItem("pixxiesx-ultimo-respaldo",new Date().toISOString())}catch(e){}
+    }else{
+      var pm={};data.pauta.forEach(function(p){pm[p.creativo_id]=p});
+      var head=["Nombre","Categoría","Etapa","Formato","Estado","Responsable","Fecha de salida","Producto","Ángulo","Hook","Creador","Entrega brief","Campaña","Conjunto","Anuncio","ID anuncio","Inversión mes","Compras mes","Valor compras mes","CPA mes","ROAS mes","Inversión sem. pasada","Compras sem. pasada","Valor sem. pasada","Inversión sem. actual","Compras sem. actual","Valor sem. actual","Clasificación","Aprendizaje"];
+      var rows=data.creativos.map(function(row){var c=fromDb(row,pm[row.id]),m=win(c,"mes"),v=c.ventanas;
+        return [c.nombre,c.categoria,c.etapa,c.formato,c.estado,nombreDe(c.responsable),c.fecha,c.producto,c.angulo,c.hook,(c.brief||{}).creador,(c.brief||{}).entrega,c.campana,c.conjunto,c.anuncio,c.anuncioId,
+          v.mes.inv,v.mes.comp,v.mes.ven,m.cpa!=null?Math.round(m.cpa):"",m.roas!=null?m.roas.toFixed(2).replace(".",","):"",v.sem.inv,v.sem.comp,v.sem.ven,v.act.inv,v.act.comp,v.act.ven,tierName(classify(c).id),c.aprendizaje]});
+      descargar("creativos-pixxiesx-"+hoy()+".csv","\ufeff"+[head].concat(rows).map(function(r){return r.map(csvCell).join(";")}).join("\r\n"),"text/csv;charset=utf-8");
+    }
+    btn.disabled=false;btn.textContent=txt;toast("Respaldo descargado");if(tipo==="json")render();
+  }).catch(function(e){btn.disabled=false;btn.textContent=txt;toast("No se pudo descargar: "+errMsg(e))});
+}
+
 /* ================= Eventos ================= */
 document.addEventListener("click",function(ev){
   var t=ev.target.closest("button,[data-close],a[data-x]");if(!t)return;var ds=t.dataset;
+  if(ds.backup){backup(ds.backup,t);return}
   if(ds.forgot!=null){authView="forgot";render();return}
   if(ds.backLogin!=null){authView="login";render();return}
   if(ds.logout!=null){ask("¿Cerrar sesión en este dispositivo?","Salir").then(function(ok){if(ok)sb.auth.signOut()});return}
